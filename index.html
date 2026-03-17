@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedido — Beagle & Butter 🐾</title>
+  <style>
+    :root {
+      --cream: #FFF8F0;
+      --brown: #5C3D2E;
+      --butter: #F5C842;
+      --text: #2D2D2D;
+      --border: #E0D0C0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', serif;
+      background: var(--cream);
+      color: var(--text);
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+    h1 { color: var(--brown); font-size: 1.6rem; margin-bottom: 4px; }
+    .subtitle { color: #888; font-size: 0.9rem; margin-bottom: 24px; }
+    .step { display: none; }
+    .step.active { display: block; }
+    .step-title {
+      font-size: 1.1rem; font-weight: bold;
+      color: var(--brown); margin-bottom: 16px;
+      border-bottom: 2px solid var(--butter); padding-bottom: 8px;
+    }
+    label { display: block; margin-bottom: 4px; font-size: 0.9rem; color: #555; }
+    input, select, textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 1rem; margin-bottom: 16px;
+      background: white;
+    }
+    .product-card {
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; margin-bottom: 12px;
+      background: white; display: flex;
+      justify-content: space-between; align-items: center;
+    }
+    .product-info h3 { font-size: 1rem; color: var(--brown); }
+    .product-info p { font-size: 0.8rem; color: #888; }
+    .qty-control { display: flex; align-items: center; gap: 8px; }
+    .qty-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none; background: var(--butter);
+      color: var(--brown); font-size: 1.1rem;
+      cursor: pointer; font-weight: bold;
+    }
+    .btn-primary {
+      width: 100%; padding: 14px;
+      background: var(--brown); color: white;
+      border: none; border-radius: 12px;
+      font-size: 1rem; cursor: pointer; margin-top: 8px;
+    }
+    .btn-secondary {
+      width: 100%; padding: 12px;
+      background: transparent; color: var(--brown);
+      border: 2px solid var(--brown); border-radius: 12px;
+      font-size: 1rem; cursor: pointer; margin-top: 8px;
+    }
+    .btn-schedule {
+      padding: 8px 14px; background: #f0e0c0;
+      color: var(--brown); border: none;
+      border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+    }
+    .summary-item {
+      display: flex; justify-content: space-between;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+    }
+    .total { font-size: 1.2rem; font-weight: bold; color: var(--brown); }
+    .order-number {
+      background: var(--butter); color: var(--brown);
+      padding: 12px; border-radius: 10px;
+      text-align: center; font-size: 1.1rem;
+      font-weight: bold; margin-bottom: 16px;
+    }
+    .success-box {
+      background: #e8f5e9; border-radius: 12px;
+      padding: 20px; text-align: center;
+    }
+    .badge-agendado {
+      background: #fff3cd; color: #856404;
+      padding: 4px 10px; border-radius: 20px;
+      font-size: 0.75rem; margin-left: 8px;
+    }
+    .cat-header {
+      font-weight: bold; color: #888; font-size: 0.8rem;
+      margin: 12px 0 8px; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🐾 Beagle & Butter</h1>
+<p class="subtitle">Panadería artesanal — Villahermosa, Tab.</p>
+
+<!-- PASO 1 -->
+<div class="step active" id="step-1">
+  <div class="step-title">👤 Tus datos</div>
+  <label>Nombre completo *</label>
+  <input type="text" id="cliente-nombre" placeholder="Ej: Ana García" required>
+  <label>WhatsApp o @Instagram *</label>
+  <input type="text" id="cliente-contacto" placeholder="Ej: 9931234567 o @ana.garcia">
+  <label>¿Cómo nos escribiste?</label>
+  <select id="canal">
+    <option value="WhatsApp">WhatsApp</option>
+    <option value="Instagram">Instagram</option>
+  </select>
+  <button class="btn-primary" onclick="goToStep(2)">Continuar →</button>
+</div>
+
+<!-- PASO 2 -->
+<div class="step" id="step-2">
+  <div class="step-title">🥖 Elige tus productos</div>
+  <div id="productos-lista">
+    <p style="color:#888; text-align:center; padding:20px;">Cargando menú...</p>
+  </div>
+  <button class="btn-primary" onclick="goToStep(3)" id="btn-paso3" style="display:none">Ver mi pedido →</button>
+</div>
+
+<!-- PASO 3 -->
+<div class="step" id="step-3">
+  <div class="step-title">🚚 ¿Cómo lo recibes?</div>
+  <label>
+    <input type="checkbox" id="requiere-envio" onchange="toggleEnvio()">
+    Quiero envío a domicilio
+  </label>
+  <div id="envio-fields" style="display:none; margin-top:12px;">
+    <label>Dirección de entrega</label>
+    <textarea id="direccion" rows="3" placeholder="Calle, número, colonia..."></textarea>
+  </div>
+  <label style="margin-top:8px;">Fecha deseada de entrega</label>
+  <input type="date" id="fecha-entrega">
+  <button class="btn-primary" onclick="goToStep(4)">Continuar →</button>
+  <button class="btn-secondary" onclick="goToStep(2)">← Regresar</button>
+</div>
+
+<!-- PASO 4 -->
+<div class="step" id="step-4">
+  <div class="step-title">📋 Resumen de tu pedido</div>
+  <div class="order-number" id="numero-pedido">Generando número...</div>
+  <div id="resumen-items"></div>
+  <div class="summary-item" style="margin-top:4px;">
+    <span class="total">Total a pagar</span>
+    <span class="total" id="total-final">$0 MXN</span>
+  </div>
+  <div style="margin-top:20px;">
+    <p style="font-size:0.9rem; color:#555; margin-bottom:12px;">
+      Al confirmar, recibirás tu link de pago seguro con Mercado Pago.
+      Después de pagar, manda tu comprobante por WhatsApp.
+    </p>
+    <button class="btn-primary" onclick="confirmarPedido()">💳 Confirmar y pagar</button>
+    <button class="btn-secondary" onclick="goToStep(3)">← Regresar</button>
+  </div>
+</div>
+
+<!-- PASO 5 -->
+<div class="step" id="step-5">
+  <div class="success-box">
+    <div style="font-size:3rem;">🎉</div>
+    <h2 style="color:#2e7d32; margin:12px 0;">¡Pedido recibido!</h2>
+    <div class="order-number" id="numero-confirmado" style="margin:16px 0;"></div>
+    <p style="margin-bottom:16px; font-size:0.95rem;">
+      Manda tu <strong>voucher o captura de pantalla</strong> del pago por WhatsApp.
+    </p>
+    <a id="link-pago" href="#" target="_blank">
+      <button class="btn-primary">💳 Ir a pagar con Mercado Pago</button>
+    </a>
+    <a id="link-whatsapp" href="#" target="_blank">
+      <button class="btn-secondary" style="margin-top:8px;">📲 Mandar voucher por WhatsApp</button>
+    </a>
+  </div>
+</div>
+
+<script>
+  const CONFIG = {
+    // El menú se carga desde Make (webhook público) para no exponer tokens
+    MAKE_PRODUCTOS_URL: 'PENDIENTE_MAKE_WEBHOOK_PRODUCTOS',
+    MAKE_WEBHOOK_URL: 'PENDIENTE_MAKE_WEBHOOK_PEDIDOS',
+    WHATSAPP_NUMBER: '52XXXXXXXXXX', // Reemplazar con tu número
+    MP_LINK: 'https://link.mercadopago.com.mx/beagleandbutter', // Reemplazar con link real
+  };
+
+  let carrito = {};
+  let pedidoAgendado = false;
+
+  function goToStep(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step-' + n).classList.add('active');
+    window.scrollTo(0, 0);
+    if (n === 4) renderResumen();
+  }
+
+  function toggleEnvio() {
+    const checked = document.getElementById('requiere-envio').checked;
+    document.getElementById('envio-fields').style.display = checked ? 'block' : 'none';
+  }
+
+  async function cargarProductos() {
+    // El webhook de Make actúa como proxy seguro — llama a Notion y devuelve los productos
+    if (CONFIG.MAKE_PRODUCTOS_URL === 'PENDIENTE_MAKE_WEBHOOK_PRODUCTOS') {
+      usarDemoData();
+      return;
+    }
+    try {
+      const res = await fetch(CONFIG.MAKE_PRODUCTOS_URL);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        renderProductosSimple(data);
+      } else {
+        usarDemoData();
+      }
+    } catch (e) {
+      usarDemoData();
+    }
+  }
+
+  function renderProductosSimple(productos) {
+    const lista = document.getElementById('productos-lista');
+    lista.innerHTML = '';
+    let cat = '';
+    productos.forEach(p => {
+      if (p.categoria !== cat) {
+        lista.innerHTML += `<p class="cat-header">${p.categoria}</p>`;
+        cat = p.categoria;
+      }
+      lista.innerHTML += crearTarjeta(p.id, p.nombre, p.precio, p.stock ?? 99);
+    });
+    document.getElementById('btn-paso3').style.display = 'block';
+  }
+
+  function usarDemoData() {
+    const demo = [
+      { id: 'd1', nombre: 'Croissant', precio: 45, categoria: 'Laminado', stock: 5 },
+      { id: 'd2', nombre: 'Berlina', precio: 35, categoria: 'Pan Dulce', stock: 3 },
+      { id: 'd3', nombre: 'Concha', precio: 30, categoria: 'Pan Dulce', stock: 0 },
+      { id: 'd4', nombre: 'Hogaza', precio: 190, categoria: 'Masa Madre', stock: 2 },
+      { id: 'd5', nombre: 'Roll', precio: 60, categoria: 'Roll', stock: 4 },
+    ];
+    const lista = document.getElementById('productos-lista');
+    lista.innerHTML = '<p style="color:#e07a00; font-size:0.8rem; text-align:center; margin-bottom:12px;">Vista previa</p>';
+    let cat = '';
+    demo.forEach(p => {
+      if (p.categoria !== cat) {
+        lista.innerHTML += `<p class="cat-header">${p.categoria}</p>`;
+        cat = p.categoria;
+      }
+      lista.innerHTML += crearTarjeta(p.id, p.nombre, p.precio, p.stock);
+    });
+    document.getElementById('btn-paso3').style.display = 'block';
+  }
+
+  function renderProductos(results) {
+    const lista = document.getElementById('productos-lista');
+    lista.innerHTML = '';
+    let cat = '';
+    results.forEach(p => {
+      const props = p.properties;
+      const nombre = props['Producto']?.title?.[0]?.plain_text || props['Nombre']?.title?.[0]?.plain_text || 'Producto';
+      const precio = props['Precio_Venta']?.number || props['Precio']?.number || 0;
+      const categoria = props['Categoria']?.select?.name || props['Categoría']?.select?.name || '';
+      if (categoria !== cat) {
+        lista.innerHTML += `<p class="cat-header">${categoria}</p>`;
+        cat = categoria;
+      }
+      lista.innerHTML += crearTarjeta(p.id, nombre, precio, 99);
+    });
+    document.getElementById('btn-paso3').style.display = 'block';
+  }
+
+  function crearTarjeta(id, nombre, precio, stock) {
+    if (stock === 0) {
+      return `<div class="product-card">
+        <div class="product-info">
+          <h3>${nombre} <span style="color:#aaa; font-size:0.8rem">Sin stock</span></h3>
+          <p>$${precio} MXN</p>
+        </div>
+        <button class="btn-schedule" onclick="agendarProducto('${id}','${nombre}',${precio})">📅 Agendar</button>
+      </div>`;
+    }
+    return `<div class="product-card">
+      <div class="product-info">
+        <h3>${nombre}</h3>
+        <p>$${precio} MXN</p>
+      </div>
+      <div class="qty-control">
+        <button class="qty-btn" onclick="cambiarQty('${id}','${nombre}',${precio},-1)">−</button>
+        <span id="qty-${id}">0</span>
+        <button class="qty-btn" onclick="cambiarQty('${id}','${nombre}',${precio},+1)">+</button>
+      </div>
+    </div>`;
+  }
+
+  function cambiarQty(id, nombre, precio, delta) {
+    if (!carrito[id]) carrito[id] = { nombre, precio, qty: 0 };
+    carrito[id].qty = Math.max(0, carrito[id].qty + delta);
+    document.getElementById('qty-' + id).textContent = carrito[id].qty;
+    if (carrito[id].qty === 0) delete carrito[id];
+  }
+
+  function agendarProducto(id, nombre, precio) {
+    pedidoAgendado = true;
+    carrito[id] = { nombre, precio, qty: 1, agendado: true };
+    alert(`"${nombre}" agregado como pedido agendado.`);
+  }
+
+  function renderResumen() {
+    const items = document.getElementById('resumen-items');
+    items.innerHTML = '';
+    let total = 0;
+    Object.values(carrito).forEach(item => {
+      const subtotal = item.precio * item.qty;
+      total += subtotal;
+      items.innerHTML += `<div class="summary-item">
+        <span>${item.nombre} x${item.qty}${item.agendado ? '<span class="badge-agendado">Agendado</span>' : ''}</span>
+        <span>$${subtotal} MXN</span>
+      </div>`;
+    });
+    document.getElementById('total-final').textContent = `$${total} MXN`;
+    const fecha = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const num = String(Math.floor(Math.random() * 900) + 100);
+    window._numPedido = `B&B-${fecha}-${num}`;
+    window._total = total;
+    document.getElementById('numero-pedido').textContent = `Pedido: ${window._numPedido}`;
+  }
+
+  async function confirmarPedido() {
+    const nombre = document.getElementById('cliente-nombre').value.trim();
+    if (!nombre) { alert('Por favor escribe tu nombre'); goToStep(1); return; }
+    if (Object.keys(carrito).length === 0) { alert('Agrega al menos un producto'); goToStep(2); return; }
+
+    const pedido = {
+      numero_pedido: window._numPedido,
+      cliente_nombre: nombre,
+      cliente_contacto: document.getElementById('cliente-contacto').value,
+      canal: document.getElementById('canal').value,
+      productos: carrito,
+      total: window._total,
+      requiere_envio: document.getElementById('requiere-envio').checked,
+      direccion: document.getElementById('direccion').value,
+      fecha_entrega: document.getElementById('fecha-entrega').value,
+      agendado: pedidoAgendado,
+      timestamp: new Date().toISOString()
+    };
+
+    if (CONFIG.MAKE_WEBHOOK_URL !== 'PENDIENTE_MAKE_WEBHOOK') {
+      try {
+        await fetch(CONFIG.MAKE_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pedido)
+        });
+      } catch(e) { console.error('Webhook error:', e); }
+    }
+
+    const msgWA = encodeURIComponent(`Hola! Mi comprobante del pedido ${window._numPedido} — $${window._total} MXN`);
+    document.getElementById('numero-confirmado').textContent = `Pedido: ${window._numPedido}`;
+    document.getElementById('link-pago').href = CONFIG.MP_LINK;
+    document.getElementById('link-whatsapp').href = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${msgWA}`;
+    goToStep(5);
+  }
+
+  window.onload = () => {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha-entrega').min = hoy;
+    document.getElementById('fecha-entrega').value = hoy;
+    cargarProductos();
+  };
+</script>
+</body>
+</html>
