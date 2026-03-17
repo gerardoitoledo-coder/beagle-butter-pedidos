@@ -151,11 +151,16 @@
     <span class="total" id="total-final">$0 MXN</span>
   </div>
   <div style="margin-top:20px;">
-    <p style="font-size:0.9rem; color:#555; margin-bottom:12px;">
-      Al confirmar, recibirás tu link de pago seguro con Mercado Pago.
-      Después de pagar, manda tu comprobante por WhatsApp.
-    </p>
-    <button class="btn-primary" onclick="confirmarPedido()">💳 Confirmar y pagar</button>
+    <label style="font-size:1rem; margin-bottom:8px;">¿Cómo vas a pagar?</label>
+    <div style="display:flex; gap:10px; margin-bottom:16px;">
+      <button id="btn-mp" onclick="seleccionarPago('mp')" style="flex:1; padding:12px; border-radius:10px; border:2px solid var(--butter); background:var(--butter); color:var(--brown); font-size:0.9rem; cursor:pointer; font-weight:bold;">
+        💳 En línea<br><span style="font-size:0.75rem; font-weight:normal;">Mercado Pago</span>
+      </button>
+      <button id="btn-efectivo" onclick="seleccionarPago('efectivo')" style="flex:1; padding:12px; border-radius:10px; border:2px solid var(--border); background:white; color:var(--brown); font-size:0.9rem; cursor:pointer;">
+        💵 Efectivo<br><span style="font-size:0.75rem; font-weight:normal;">Al recibir</span>
+      </button>
+    </div>
+    <button class="btn-primary" onclick="confirmarPedido()">✅ Confirmar pedido</button>
     <button class="btn-secondary" onclick="goToStep(3)">← Regresar</button>
   </div>
 </div>
@@ -166,14 +171,12 @@
     <div style="font-size:3rem;">🎉</div>
     <h2 style="color:#2e7d32; margin:12px 0;">¡Pedido recibido!</h2>
     <div class="order-number" id="numero-confirmado" style="margin:16px 0;"></div>
-    <p style="margin-bottom:16px; font-size:0.95rem;">
-      Manda tu <strong>voucher o captura de pantalla</strong> del pago por WhatsApp.
-    </p>
-    <a id="link-pago" href="#" target="_blank">
-      <button class="btn-primary">💳 Ir a pagar con Mercado Pago</button>
+    <p id="msg-pago" style="margin-bottom:16px; font-size:0.95rem;"></p>
+    <a id="link-pago" href="#" target="_blank" id="link-pago-wrap">
+      <button class="btn-primary" id="btn-ir-pagar">💳 Ir a pagar con Mercado Pago</button>
     </a>
     <a id="link-whatsapp" href="#" target="_blank">
-      <button class="btn-secondary" style="margin-top:8px;">📲 Mandar voucher por WhatsApp</button>
+      <button class="btn-secondary" id="btn-whatsapp" style="margin-top:8px;">📲 Confirmar por WhatsApp</button>
     </a>
   </div>
 </div>
@@ -188,6 +191,28 @@
 
   let carrito = {};
   let pedidoAgendado = false;
+  let metodoPago = 'mp'; // 'mp' o 'efectivo'
+
+  function seleccionarPago(tipo) {
+    metodoPago = tipo;
+    const btnMp = document.getElementById('btn-mp');
+    const btnEfectivo = document.getElementById('btn-efectivo');
+    if (tipo === 'mp') {
+      btnMp.style.background = 'var(--butter)';
+      btnMp.style.border = '2px solid var(--butter)';
+      btnMp.style.fontWeight = 'bold';
+      btnEfectivo.style.background = 'white';
+      btnEfectivo.style.border = '2px solid var(--border)';
+      btnEfectivo.style.fontWeight = 'normal';
+    } else {
+      btnEfectivo.style.background = 'var(--butter)';
+      btnEfectivo.style.border = '2px solid var(--butter)';
+      btnEfectivo.style.fontWeight = 'bold';
+      btnMp.style.background = 'white';
+      btnMp.style.border = '2px solid var(--border)';
+      btnMp.style.fontWeight = 'normal';
+    }
+  }
 
   function goToStep(n) {
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
@@ -345,6 +370,7 @@
       direccion: document.getElementById('direccion').value,
       fecha_entrega: document.getElementById('fecha-entrega').value,
       agendado: pedidoAgendado,
+      metodo_pago: metodoPago,
       timestamp: new Date().toISOString()
     };
 
@@ -358,10 +384,24 @@
       } catch(e) { console.error('Webhook error:', e); }
     }
 
-    const msgWA = encodeURIComponent(`Hola! Mi comprobante del pedido ${window._numPedido} — $${window._total} MXN`);
     document.getElementById('numero-confirmado').textContent = `Pedido: ${window._numPedido}`;
-    document.getElementById('link-pago').href = CONFIG.MP_LINK;
-    document.getElementById('link-whatsapp').href = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${msgWA}`;
+
+    if (metodoPago === 'mp') {
+      const msgWA = encodeURIComponent(`Hola! Mi comprobante del pedido ${window._numPedido} — $${window._total} MXN`);
+      document.getElementById('msg-pago').innerHTML = `Manda tu <strong>voucher o captura de pantalla</strong> del pago por WhatsApp.`;
+      document.getElementById('link-pago').href = CONFIG.MP_LINK;
+      document.getElementById('btn-ir-pagar').style.display = 'block';
+      document.getElementById('btn-whatsapp').textContent = '📲 Mandar voucher por WhatsApp';
+      document.getElementById('link-whatsapp').href = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${msgWA}`;
+    } else {
+      const msgEfectivo = encodeURIComponent(`Hola! Confirmando mi pedido ${window._numPedido} — $${window._total} MXN. Voy a pagar en efectivo al recibir.`);
+      document.getElementById('msg-pago').innerHTML = `Tu pedido fue recibido. Pagarás <strong>$${window._total} MXN en efectivo</strong> al momento de la entrega.`;
+      document.getElementById('link-pago').href = '#';
+      document.getElementById('btn-ir-pagar').style.display = 'none';
+      document.getElementById('btn-whatsapp').textContent = '📲 Confirmar por WhatsApp';
+      document.getElementById('link-whatsapp').href = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${msgEfectivo}`;
+    }
+
     goToStep(5);
   }
 
